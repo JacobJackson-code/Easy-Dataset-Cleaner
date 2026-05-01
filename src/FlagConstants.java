@@ -23,6 +23,7 @@ public final class FlagConstants {
             "CAP_EXCEEDED:",
             "INVALID_BOOL:",
             "INVALID_CONTACT:",
+            "INVALID_COUNTRY:",
             "INVALID_CURRENCY:",
             "INVALID_DATE:",
             "INVALID_EMAIL:",
@@ -46,6 +47,7 @@ public final class FlagConstants {
         SHORT_TAGS.put("CAP_EXCEEDED:",     "[CAP_EXCEEDED]");
         SHORT_TAGS.put("INVALID_BOOL:",     "[INVALID_BOOL]");
         SHORT_TAGS.put("INVALID_CONTACT:",  "[INVALID_CONTACT]");
+        SHORT_TAGS.put("INVALID_COUNTRY:",  "[INVALID_COUNTRY]");
         SHORT_TAGS.put("INVALID_CURRENCY:", "[INVALID_CURRENCY]");
         SHORT_TAGS.put("INVALID_DATE:",     "[INVALID_DATE]");
         SHORT_TAGS.put("INVALID_EMAIL:",    "[INVALID_EMAIL]");

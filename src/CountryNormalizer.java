@@ -612,9 +612,9 @@ public class CountryNormalizer {
         String key = input.toLowerCase().trim();
 
         switch (format.toLowerCase()) {
-            case "iso2":     return toIso2.getOrDefault(key, input);
-            case "iso3":     return toIso3.getOrDefault(key, input);
-            case "fullname": return toFullName.getOrDefault(key, input);
+            case "iso2":     return toIso2.containsKey(key)     ? toIso2.get(key)     : "INVALID_COUNTRY: " + input;
+            case "iso3":     return toIso3.containsKey(key)     ? toIso3.get(key)     : "INVALID_COUNTRY: " + input;
+            case "fullname": return toFullName.containsKey(key) ? toFullName.get(key) : "INVALID_COUNTRY: " + input;
             default:         return input;
         }
     }
