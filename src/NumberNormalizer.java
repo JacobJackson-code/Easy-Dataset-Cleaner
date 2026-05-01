@@ -76,6 +76,34 @@ public class NumberNormalizer {
     private static final String NEG_PARENS   = "parens";
     private static final String NEG_FLAG     = "flag";
 
+    // ── Rule handler interface ────────────────────────────────────────────────
+    @FunctionalInterface
+    private interface RuleHandler {
+        String handle(String input, String[] parts);
+    }
+
+    // Numeric handlers: result flows into NEG_PARENS wrapping and cap check.
+    private final Map<String, RuleHandler> numericHandlers = new HashMap<>();
+
+    // Text handlers: result is final, post-processing is skipped entirely.
+    private final Map<String, RuleHandler> textHandlers = new HashMap<>();
+
+    {
+        numericHandlers.put("integer",      (in, p) -> toInteger(in));
+        numericHandlers.put("words",        (in, p) -> toWords(in));
+        numericHandlers.put("currency",     (in, p) -> formatCurrency(in, toLower(p)));
+        numericHandlers.put("decimal",      (in, p) -> formatDecimal(in, toLower(p)));
+        numericHandlers.put("round",        (in, p) -> formatRound(in, toLower(p)));
+        numericHandlers.put("percent",      (in, p) -> formatPercent(in, toLower(p)));
+
+        textHandlers.put("case",            (in, p) -> textNormalizer.applyCase(in, toLower(p)));
+        textHandlers.put("name",            (in, p) -> textNormalizer.applyName(in, toLower(p)));
+        textHandlers.put("validate",        (in, p) -> textNormalizer.applyValidate(in, toLower(p)));
+        textHandlers.put("currency_code",   (in, p) -> applyCurrencyCode(in, toLower(p)));
+        textHandlers.put("id",              (in, p) -> textNormalizer.applyId(in, p));   // original parts — case-sensitive output values
+        textHandlers.put("bool",            (in, p) -> textNormalizer.applyBool(in, p)); // original parts — case-sensitive output values
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // PUBLIC ENTRY POINTS
     // ─────────────────────────────────────────────────────────────────────────
@@ -115,39 +143,16 @@ public class NumberNormalizer {
             input = parensToNegative(input);
         }
 
-        String result;
-        switch (type) {
-            case "integer":
-                result = toInteger(input);
-                if (result == null) return "INVALID_NUMBER: " + input;
-                break;
-            case "words":
-                result = toWords(input);
-                break;
-            case "currency":
-                result = formatCurrency(input, toLower(parts));
-                if (result == null) return "INVALID_NUMBER: " + input;
-                break;
-            case "decimal":
-                result = formatDecimal(input, toLower(parts));
-                if (result == null) return "INVALID_NUMBER: " + input;
-                break;
-            case "round":
-                result = formatRound(input, toLower(parts));
-                if (result == null) return "INVALID_NUMBER: " + input;
-                break;
-            case "percent":
-                result = formatPercent(input, toLower(parts));
-                if (result == null) return "INVALID_NUMBER: " + input;
-                break;
-            case "case":          return textNormalizer.applyCase(input, toLower(parts));
-            case "currency_code": return applyCurrencyCode(input, toLower(parts));
-            case "name":          return textNormalizer.applyName(input, toLower(parts));
-            case "validate":      return textNormalizer.applyValidate(input, toLower(parts));
-            case "id":            return textNormalizer.applyId(input, parts);
-            case "bool":          return textNormalizer.applyBool(input, parts);
-            default:              return input;
-        }
+        // Text handlers return a final result — no post-processing.
+        RuleHandler textHandler = textHandlers.get(type);
+        if (textHandler != null) return textHandler.handle(input, parts);
+
+        // Numeric handlers return a raw result for NEG_PARENS wrapping and cap check below.
+        RuleHandler numericHandler = numericHandlers.get(type);
+        if (numericHandler == null) return input;  // unknown type — pass through (default)
+
+        String result = numericHandler.handle(input, parts);
+        if (result == null) return "INVALID_NUMBER: " + input;
 
         if (negStyle.equals(NEG_PARENS) && result != null)
             result = applyParensOutput(result);
