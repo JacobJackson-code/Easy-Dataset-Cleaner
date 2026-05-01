@@ -35,6 +35,14 @@ public class Main {
         boolean allowScientificNotation = false;
         cleaner.setAllowScientificNotation(allowScientificNotation);
         // ─────────────────────────────────────────────────────────────────────
+        // (How to use) novalidate — fully silent, no trace
+        //countryColumns.put("Origin",  "iso2:novalidate");
+        //phoneColumns.put("Phone",     new String[]{"national", "US", "novalidate"});
+
+        //(How to use) softfail — silent in output, appears as INFO in flag report
+        //stateColumns.put("State",     "full:softfail");
+        //dateColumns.put("DOB",        new String[]{"MDY", "MM/dd/yyyy", null, "softfail"});
+        //columnRules.put("First Name", "name:full:softfail");
 
         // ── Client Column Rules ───────────────────────────────────────────────
         // NUMBERS:  integer / words / decimal:2 / round:up / round:down /

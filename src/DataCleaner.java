@@ -467,11 +467,19 @@ public class DataCleaner {
             if (row.equals(header)) { result.add(row); continue; }
             for (Map.Entry<Integer, String> e : indexedRules.entrySet()) {
                 int col = e.getKey(); if (col >= newRow.size()) continue;
-                String before = newRow.get(col);
-                String after  = numberNormalizer.apply(before, e.getValue(), null);
+                String before     = newRow.get(col);
+                String rule       = e.getValue();
+                String silentMode = detectSilentMode(rule);
+                String cleanRule  = stripSilentMode(rule);
+                String after      = numberNormalizer.apply(before, cleanRule, null);
+                String colName    = col < header.size() ? header.get(col) : "Col" + col;
+                if (silentMode != null && !isDirty(before) && isDirty(after)) {
+                    if ("softfail".equals(silentMode))
+                        recordSkip(result.size() + 1, colName, describeRule(cleanRule), before);
+                    after = before;
+                }
                 newRow.set(col, after);
-                String colName = col < header.size() ? header.get(col) : "Col" + col;
-                recordChange(result.size() + 1, colName, describeRule(e.getValue()), before, after);
+                recordChange(result.size() + 1, colName, describeRule(cleanRule), before, after);
             }
             result.add(newRow);
         }
@@ -561,11 +569,18 @@ public class DataCleaner {
             List<String> newRow = new ArrayList<>(row);
             for (Map.Entry<Integer, String> e : indexedRules.entrySet()) {
                 int col = e.getKey(); if (col >= newRow.size()) continue;
-                String before = newRow.get(col);
+                String before     = newRow.get(col);
                 if (isDirty(before)) continue;
-                String after  = countryNormalizer.normalize(before, e.getValue());
+                String silentMode = detectSilentMode(e.getValue());
+                String cleanRule  = stripSilentMode(e.getValue());
+                String after      = countryNormalizer.normalize(before, cleanRule);
+                String colName    = col < header.size() ? header.get(col) : "Col" + col;
+                if (silentMode != null && isDirty(after)) {
+                    if ("softfail".equals(silentMode))
+                        recordSkip(result.size() + 1, colName, "Country Standardized", before);
+                    after = before;
+                }
                 newRow.set(col, after);
-                String colName = col < header.size() ? header.get(col) : "Col" + col;
                 recordChange(result.size() + 1, colName, "Country Standardized", before, after);
             }
             result.add(newRow);
@@ -589,11 +604,18 @@ public class DataCleaner {
             List<String> newRow = new ArrayList<>(row);
             for (Map.Entry<Integer, String> e : indexedRules.entrySet()) {
                 int col = e.getKey(); if (col >= newRow.size()) continue;
-                String before = newRow.get(col);
+                String before     = newRow.get(col);
                 if (isDirty(before)) continue;
-                String after  = stateNormalizer.normalize(before, e.getValue());
+                String silentMode = detectSilentMode(e.getValue());
+                String cleanRule  = stripSilentMode(e.getValue());
+                String after      = stateNormalizer.normalize(before, cleanRule);
+                String colName    = col < header.size() ? header.get(col) : "Col" + col;
+                if (silentMode != null && isDirty(after)) {
+                    if ("softfail".equals(silentMode))
+                        recordSkip(result.size() + 1, colName, "State Standardized", before);
+                    after = before;
+                }
                 newRow.set(col, after);
-                String colName = col < header.size() ? header.get(col) : "Col" + col;
                 recordChange(result.size() + 1, colName, "State Standardized", before, after);
             }
             result.add(newRow);
@@ -622,13 +644,19 @@ public class DataCleaner {
                 String before = newRow.get(col);
                 if (isDirty(before)) continue;
                 String[] rule         = e.getValue();
+                String silentMode     = detectSilentMode(rule);
                 String inputOrder     = rule.length > 0 ? rule[0] : "MDY";
                 String outputFormat   = rule.length > 1 ? rule[1] : "MM/dd/yyyy";
                 String secondaryOrder = rule.length > 2 ? rule[2] : null;
                 String after = dateNormalizer.normalize(before, inputOrder, outputFormat,
                         suspiciousYearBefore, minYear, maxYear, secondaryOrder);
-                newRow.set(col, after);
                 String colName = col < header.size() ? header.get(col) : "Col" + col;
+                if (silentMode != null && isDirty(after)) {
+                    if ("softfail".equals(silentMode))
+                        recordSkip(result.size() + 1, colName, "Date Reformatted", before);
+                    after = before;
+                }
+                newRow.set(col, after);
                 recordChange(result.size() + 1, colName, "Date Reformatted", before, after);
             }
             result.add(newRow);
@@ -654,14 +682,20 @@ public class DataCleaner {
             for (Map.Entry<Integer, String[]> e : indexedRules.entrySet()) {
                 int col = e.getKey(); if (col >= newRow.size()) continue;
                 String[] rule           = e.getValue();
+                String silentMode       = detectSilentMode(rule);
                 String outputFormat     = rule.length > 0 ? rule[0] : "HH:mm";
                 String timezoneHandling = rule.length > 1 ? rule[1] : "strip";
                 String before = newRow.get(col);
                 if (isDirty(before)) continue;
                 String after = timeNormalizer.normalize(before, outputFormat,
                         timezoneHandling, globalTimezone);
-                newRow.set(col, after);
                 String colName = col < header.size() ? header.get(col) : "Col" + col;
+                if (silentMode != null && isDirty(after)) {
+                    if ("softfail".equals(silentMode))
+                        recordSkip(result.size() + 1, colName, "Time Reformatted", before);
+                    after = before;
+                }
+                newRow.set(col, after);
                 recordChange(result.size() + 1, colName, "Time Reformatted", before, after);
             }
             result.add(newRow);
@@ -688,14 +722,20 @@ public class DataCleaner {
             List<String> newRow = new ArrayList<>(row);
             for (Map.Entry<Integer, String[]> e : indexedRules.entrySet()) {
                 int col = e.getKey(); if (col >= newRow.size()) continue;
-                String before = newRow.get(col);
+                String before     = newRow.get(col);
                 if (isDirty(before)) continue;
-                String[] rule  = e.getValue();
-                String format  = rule.length > 0 ? rule[0] : "national";
-                String country = rule.length > 1 ? rule[1] : "US";
-                String after   = phoneNormalizer.normalize(before, format, country);
+                String[] rule     = e.getValue();
+                String silentMode = detectSilentMode(rule);
+                String format     = rule.length > 0 ? rule[0] : "national";
+                String country    = rule.length > 1 ? rule[1] : "US";
+                String after      = phoneNormalizer.normalize(before, format, country);
+                String colName    = col < header.size() ? header.get(col) : "Col" + col;
+                if (silentMode != null && isDirty(after)) {
+                    if ("softfail".equals(silentMode))
+                        recordSkip(result.size() + 1, colName, "Phone Formatted", before);
+                    after = before;
+                }
                 newRow.set(col, after);
-                String colName = col < header.size() ? header.get(col) : "Col" + col;
                 recordChange(result.size() + 1, colName, "Phone Formatted", before, after);
             }
             result.add(newRow);
@@ -722,14 +762,20 @@ public class DataCleaner {
             List<String> newRow = new ArrayList<>(row);
             for (Map.Entry<Integer, String[]> e : indexedRules.entrySet()) {
                 int col = e.getKey(); if (col >= newRow.size()) continue;
-                String before = newRow.get(col);
+                String before     = newRow.get(col);
                 if (isDirty(before)) continue;
-                String[] rule  = e.getValue();
-                String format  = rule.length > 0 ? rule[0] : "auto";
-                String country = rule.length > 1 ? rule[1] : null;
-                String after   = zipNormalizer.normalize(before, format, country);
+                String[] rule     = e.getValue();
+                String silentMode = detectSilentMode(rule);
+                String format     = rule.length > 0 ? rule[0] : "auto";
+                String country    = rule.length > 1 ? rule[1] : null;
+                String after      = zipNormalizer.normalize(before, format, country);
+                String colName    = col < header.size() ? header.get(col) : "Col" + col;
+                if (silentMode != null && isDirty(after)) {
+                    if ("softfail".equals(silentMode))
+                        recordSkip(result.size() + 1, colName, "ZIP Formatted", before);
+                    after = before;
+                }
                 newRow.set(col, after);
-                String colName = col < header.size() ? header.get(col) : "Col" + col;
                 recordChange(result.size() + 1, colName, "ZIP Formatted", before, after);
             }
             result.add(newRow);
@@ -861,6 +907,62 @@ public class DataCleaner {
     // ─────────────────────────────────────────────────────────────────────────
     // PRIVATE HELPERS
     // ─────────────────────────────────────────────────────────────────────────
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SILENT-MODE HELPERS
+    //
+    // detectSilentMode — returns "novalidate", "softfail", or null.
+    //   novalidate : pass-through on failure, no trace anywhere.
+    //   softfail   : pass-through on failure, recorded as INFO in flag report.
+    //
+    // stripSilentMode  — removes the modifier token before passing a rule
+    //                    string to a normalizer that doesn't know about it.
+    //
+    // recordSkip       — writes a softfail entry into silentChanges so it
+    //                    appears in the INFO section of the flag report.
+    //                    Parallel to recordChange but fires when before == after
+    //                    (i.e. a pass-through after a failed normalisation).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Overload for string-based rules (country, state, columnRules)
+    private String detectSilentMode(String rule) {
+        if (rule == null) return null;
+        String lower = rule.toLowerCase();
+        if (lower.endsWith(":novalidate") || lower.equals("novalidate")) return "novalidate";
+        if (lower.endsWith(":softfail")   || lower.equals("softfail"))   return "softfail";
+        return null;
+    }
+
+    // Overload for array-based rules (date, time, phone, zip)
+    private String detectSilentMode(String[] rule) {
+        if (rule == null) return null;
+        for (String token : rule) {
+            if (token == null) continue;
+            if ("novalidate".equalsIgnoreCase(token)) return "novalidate";
+            if ("softfail".equalsIgnoreCase(token))   return "softfail";
+        }
+        return null;
+    }
+
+    private String stripSilentMode(String rule) {
+        if (rule == null) return null;
+        return rule.replaceAll("(?i):novalidate$", "")
+                .replaceAll("(?i):softfail$",   "")
+                .replaceAll("(?i)^novalidate$",  "")
+                .replaceAll("(?i)^softfail$",    "")
+                .trim();
+    }
+
+    private void recordSkip(int rowNum, String colName, String transformation, String value) {
+        if (value == null || value.trim().isEmpty()) return;
+        List<String> entry = new ArrayList<>();
+        entry.add(String.valueOf(rowNum));
+        entry.add(colName);
+        entry.add(transformation + " [skipped]");
+        entry.add(value);
+        entry.add("→ unchanged");
+        silentChanges.add(entry);
+    }
 
     private int scoreRow(List<String> row) {
         int score = 0;
