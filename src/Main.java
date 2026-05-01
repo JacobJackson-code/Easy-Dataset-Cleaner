@@ -9,7 +9,7 @@ public class Main {
         ExcelWriter excelWriter = new ExcelWriter();
         DataCleaner cleaner     = new DataCleaner();
 
-        String inputFile  = "import.csv";
+        String inputFile  = "messyDataset.csv";
         String outputFile = "output.csv";
 
         // ── Mode ─────────────────────────────────────────────────────────────
@@ -51,12 +51,12 @@ public class Main {
         // columnRules.put("Age",        "integer");
         // columnRules.put("Salary",     "currency:USD");
         // columnRules.put("Status",     "case:upper");
-        // columnRules.put("Currency",   "currency_code:upper");
-        // columnRules.put("Email",      "validate:email");
-        // columnRules.put("Name",       "name:full");
+           columnRules.put("Currency",   "currency_code:upper");
+           columnRules.put("Email",      "validate:email");
+           columnRules.put("FullName",       "name:full");
         // columnRules.put("CustomerID", "id:startswith:USR:endswith:number");
-        // columnRules.put("Active",     "bool:true/false");
-        // columnRules.put("Amount",     "decimal:2:standard");
+           columnRules.put("Active",     "bool:TRUE/FALSE");
+           columnRules.put("OrderAmount",     "decimal:2:standard:nocomma");
         // ─────────────────────────────────────────────────────────────────────
 
         // ── Client Column Caps ────────────────────────────────────────────────
@@ -73,14 +73,14 @@ public class Main {
 
         // ── Client Country Config ─────────────────────────────────────────────
         Map<String, String> countryColumns = new HashMap<>();
-        // countryColumns.put("Country", "fullname");
+           countryColumns.put("BirthCountry", "fullname");
         // ─────────────────────────────────────────────────────────────────────
 
         // ── US State Normalization ────────────────────────────────────────────
         // options: "abbr" → CA  / "full" → California  / "abbr_dot" → C.A.
         // Recognizes: full names, abbreviations, common variants, dotted forms
         Map<String, String> stateColumns = new HashMap<>();
-        // stateColumns.put("State", "abbr");
+           stateColumns.put("State", "abbr");
         // stateColumns.put("StateOfResidence", "full");
         // ─────────────────────────────────────────────────────────────────────
 
@@ -104,17 +104,19 @@ public class Main {
         //   null = no assumption, bare times like "14:30" are used as-is
         //   "America/Chicago" = all bare times treated as CST
         Map<String, String[]> timeColumns = new HashMap<>();
-        // timeColumns.put("EventTime",  new String[]{"HH:mm:ss", "UTC"});
+           timeColumns.put("SignupTime",  new String[]{"HH:mm:ss"});
+           //timeColumns.put("SignupTime",  new String[]{"HH:mm:ss", "UTC"});
         // timeColumns.put("OrderTime",  new String[]{"hh:mm a",  "America/New_York"});
         // timeColumns.put("LocalTime",  new String[]{"HH:mm",    "strip"});
 
         String globalTimezone = null; // e.g. "America/Chicago" or null
         // ─────────────────────────────────────────────────────────────────────
         Map<String, String[]> phoneColumns = new LinkedHashMap<>();
+           phoneColumns.put("Phone", new String[]{"national", "US"});
         // phoneColumns.put("Phone", new String[]{"national", "US"});
 
         Map<String, String[]> zipColumns = new LinkedHashMap<>();
-        // zipColumns.put("ZipCode", new String[]{"zip5", "US"});
+          // zipColumns.put("ZipCode", new String[]{"zip5", "US"});
 
         String nullOutputFormat = null;
         // nullOutputFormat = "N/A";
@@ -130,11 +132,11 @@ public class Main {
         //   instead of flagging as suspicious. Set if you know the client's data source.
         //   Example: primary=YMD output=yyyy-MM-dd secondary=MDY (American data)
         Map<String, String[]> dateColumns = new HashMap<>();
-        // dateColumns.put("SignupDate", new String[]{"YMD", "yyyy-MM-dd", "MDY"});
+           dateColumns.put("SignupDate", new String[]{"YMD", "yyyy-MM-dd", "MDY"});
         // dateColumns.put("DOB",        new String[]{"DMY", "dd/MM/yyyy"});
         int minYear             = 1900;
         int maxYear             = 2100;
-        int suspiciousYearBefore = 2000;
+        int suspiciousYearBefore = 0;
         // ─────────────────────────────────────────────────────────────────────
 
         // ── Currency-Aware Decimal Formatting ─────────────────────────────────
@@ -153,7 +155,7 @@ public class Main {
         // ── Required Columns ─────────────────────────────────────────────────
         // Any row missing a value in these columns goes to the rejected file
         Set<String> requiredColumns = new HashSet<>();
-        // requiredColumns.add("CustomerID");
+           requiredColumns.add("CustomerID");
         // requiredColumns.add("Email");
         // ─────────────────────────────────────────────────────────────────────
 
@@ -187,7 +189,7 @@ public class Main {
 
         // ── Duplicate Detection ───────────────────────────────────────────────
         Set<String> duplicateColumns = new HashSet<>();
-        // duplicateColumns.add("Email");
+           duplicateColumns.add("CustomerID");
         // ─────────────────────────────────────────────────────────────────────
 
         // ── Null-Like Value Flags ─────────────────────────────────────────────
@@ -198,12 +200,12 @@ public class Main {
         nullFlags.add("?");
         // ─────────────────────────────────────────────────────────────────────
 
-        // ── Double Space Fix ──────────────────────────────────────────────────
+        // ── Double Space Fix (Allow) ──────────────────────────────────────────────────
         Set<String> allowDoubleSpaces = new HashSet<>();
         // allowDoubleSpaces.add("Notes");
         // ─────────────────────────────────────────────────────────────────────
 
-        // ── Multiline Fix ─────────────────────────────────────────────────────
+        // ── Multiline Fix (Allow)─────────────────────────────────────────────────────
         Set<String> allowMultiline = new HashSet<>();
         // allowMultiline.add("Notes");
         // ─────────────────────────────────────────────────────────────────────
@@ -214,7 +216,7 @@ public class Main {
 
         // ── Flag Report Identifier Columns ────────────────────────────────────
         Set<String> flagReportIdentifiers = new LinkedHashSet<>();
-        // flagReportIdentifiers.add("CustomerID");
+           flagReportIdentifiers.add("CustomerID");
         // flagReportIdentifiers.add("Email");
         // ─────────────────────────────────────────────────────────────────────
 
@@ -235,14 +237,15 @@ public class Main {
         //   boolean   → native Excel boolean (TRUE/FALSE)
         //   text      → explicit string
         Map<String, String> excelColumnTypes = new HashMap<>();
-        // excelColumnTypes.put("Amount",    "number");
-        // excelColumnTypes.put("Age",       "integer");
+           excelColumnTypes.put("OrderAmount",    "currency");
+           excelColumnTypes.put("Score",       "integer");
         // excelColumnTypes.put("Salary",    "currency");
         // excelColumnTypes.put("Rate",      "percent");
-        // excelColumnTypes.put("Date",      "date");
-        // excelColumnTypes.put("EventTime", "time");
+           excelColumnTypes.put("SignupDate",      "date");
+           excelColumnTypes.put("SignupTime", "time");
         // excelColumnTypes.put("UpdatedAt", "datetime");
-        // excelColumnTypes.put("Active",    "boolean");
+           excelColumnTypes.put("Active",    "boolean");
+           excelColumnTypes.put("Notes",     "text");
         // excelColumnTypes.put("Notes",     "text");
         // ─────────────────────────────────────────────────────────────────────
 
@@ -285,6 +288,7 @@ public class Main {
         Set<String> hiddenFlagTypes = new HashSet<>();
         // hiddenFlagTypes.add("SUSPICIOUS_DATE");  // dates still in report, clean in file
         // hiddenFlagTypes.add("NULL_VALUE");        // null flags hidden from clean file
+           hiddenFlagTypes.add("INVALID_NAME");
         // ─────────────────────────────────────────────────────────────────────
 
         // ── Scan mode — runs instead of clean when MODE = "SCAN" ─────────────
