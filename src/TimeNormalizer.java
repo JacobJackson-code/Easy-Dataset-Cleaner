@@ -84,7 +84,7 @@ public class TimeNormalizer {
             for (int ci = 0; ci < trimmed.length(); ci++) {
                 if (Character.isDigit(trimmed.charAt(ci))) { couldBeTime = true; break; }
             }
-        } else if (trimmed.matches("\d{1,2}")) {
+        } else if (trimmed.matches("\\d{1,2}")) {
             couldBeTime = true; // bare hour like "14"
         }
         if (!couldBeTime) return "INVALID_TIME: " + trimmed + " (not a recognizable time)";
