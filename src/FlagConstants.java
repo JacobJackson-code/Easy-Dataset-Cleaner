@@ -9,7 +9,8 @@ import java.util.Map;
  * at runtime — no manual sync required between files.
  *
  * Referenced by:
- *   DataCleaner  — isDirty() uses FLAG_PREFIXES
+ *   DataCleaner  — isDirty() delegates to FlagConstants.isDirty()
+ *   NumberNormalizer — apply() guard calls FlagConstants.isDirty()
  *   ReportBuilder — extractFlagReport uses FLAG_PREFIXES and SHORT_TAGS
  */
 public final class FlagConstants {
@@ -59,5 +60,17 @@ public final class FlagConstants {
         SHORT_TAGS.put("NULL_VALUE:",       "[NULL_VALUE]");
         SHORT_TAGS.put("REJECTED:",         "[REJECTED]");
         SHORT_TAGS.put("SUSPICIOUS_DATE:",  "[SUSPICIOUS_DATE]");
+    }
+
+    // ── Dirty-cell predicate ───────────────────────────────────────────────────
+    // A cell is "dirty" if it is null, blank, or starts with any flag prefix.
+    // Single source of truth: all consumers delegate here so that adding a new
+    // prefix to FLAG_PREFIXES above is the only edit ever needed.
+    public static boolean isDirty(String cell) {
+        if (cell == null || cell.trim().isEmpty()) return true;
+        String t = cell.trim();
+        for (String prefix : FLAG_PREFIXES)
+            if (t.startsWith(prefix)) return true;
+        return false;
     }
 }

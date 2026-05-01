@@ -90,11 +90,7 @@ public class DataCleaner {
     // Flag prefix list lives in FlagConstants — one place for the whole system.
     // ─────────────────────────────────────────────────────────────────────────
     public boolean isDirty(String cell) {
-        if (cell == null || cell.trim().isEmpty()) return true;
-        String t = cell.trim();
-        for (String prefix : FlagConstants.FLAG_PREFIXES)
-            if (t.startsWith(prefix)) return true;
-        return false;
+        return FlagConstants.isDirty(cell);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
